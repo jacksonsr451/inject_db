@@ -3,7 +3,7 @@ import pandas as pd
 from sqlalchemy import create_engine, inspect, MetaData, Table
 
 def run():
-    st.header("Processamento de Arquivo JSON com Seleção Dinâmica")
+    st.header("Processamento de Arquivo JSON com Seleção Dinâmica e Relacionamentos")
 
     # Função para carregar o arquivo JSON e exibir colunas
     def load_json(file):
@@ -36,9 +36,8 @@ def run():
 
     # Interface do usuário
     st.title("Inserção de Dados em Banco via JSON com Seleção Dinâmica")
-    file = st.file_uploader("Faça upload do seu arquivo JSON", type=["json"])
 
-    # Etapa de conexão com o banco
+    file = st.file_uploader("Faça upload do seu arquivo JSON", type=["json"])
     db_url = st.text_input("Insira a URL de conexão com o banco de dados (ex: 'postgresql://user:password@host:port/dbname')")
 
     if db_url:
@@ -47,12 +46,11 @@ def run():
         
         if file:
             df = load_json(file)
-            
-            # Listar tabelas do banco para seleção
             tables = list_tables(engine)
             
-            # Lista para armazenar os mapeamentos
+            # Listas para armazenar mapeamentos e relacionamentos
             mappings = []
+            relationships = []
 
             st.subheader("Mapeamento de Campos JSON para o Banco de Dados")
 
@@ -60,9 +58,8 @@ def run():
             if st.button("Adicionar Mapeamento"):
                 mappings.append({"json_field": None, "db_table": None, "db_column": None})
 
-            # Mostrar todos os mapeamentos adicionados e permitir configuração
+            # Exibir os mapeamentos adicionados
             for i, mapping in enumerate(mappings):
-                # Colocar as seleções lado a lado para o mapeamento
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
@@ -74,19 +71,55 @@ def run():
                         columns = list_columns(engine, table_db)
                         db_column = st.selectbox(f"Coluna do Banco {i+1}", columns, key=f"column_{i}")
                         
-                        # Atualizar o mapeamento
                         mappings[i] = {"json_field": json_field, "db_table": table_db, "db_column": db_column}
 
-                # Botão para remover este mapeamento
+                # Botão para remover mapeamento
                 st.markdown("<div style='text-align: right;'>", unsafe_allow_html=True)
                 if st.button(f"Remover Mapeamento {i+1}"):
                     mappings.pop(i)
                 st.markdown("</div>", unsafe_allow_html=True)
 
-            # Botão para inserir dados no banco conforme os mapeamentos definidos
+            # Controle de visibilidade da interface de relacionamento
+            add_relationship = st.checkbox("Adicionar Relacionamento")
+
+            if add_relationship:
+                st.subheader("Configurar Relacionamentos entre Tabelas")
+
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    table_origin = st.selectbox("Tabela de Origem", tables, key="rel_origin_table")
+                with col2:
+                    if table_origin:
+                        columns_origin = list_columns(engine, table_origin)
+                        column_origin = st.selectbox("Coluna de Origem", columns_origin, key="rel_origin_column")
+                with col3:
+                    table_dest = st.selectbox("Tabela de Destino", tables, key="rel_dest_table")
+                with col4:
+                    if table_dest:
+                        columns_dest = list_columns(engine, table_dest)
+                        column_dest = st.selectbox("Coluna de Destino", columns_dest, key="rel_dest_column")
+
+                if st.button("Confirmar Relacionamento"):
+                    if table_origin and column_origin and table_dest and column_dest:
+                        relationships.append({
+                            "table_origin": table_origin,
+                            "column_origin": column_origin,
+                            "table_dest": table_dest,
+                            "column_dest": column_dest
+                        })
+                        st.success(f"Relacionamento adicionado: {table_origin} ({column_origin}) -> {table_dest} ({column_dest})")
+
+                if st.button("Remover Último Relacionamento"):
+                    if relationships:
+                        removed_relationship = relationships.pop()
+                        st.warning(f"Relacionamento removido: {removed_relationship['table_origin']} ({removed_relationship['column_origin']}) -> {removed_relationship['table_dest']} ({removed_relationship['column_dest']})")
+                    else:
+                        st.warning("Nenhum relacionamento para remover.")
+
+            # Inserção de dados com base nos mapeamentos e relacionamentos
             if st.button("Inserir Dados"):
                 if mappings:
-                    # Iterar sobre os mapeamentos e inserir dados
                     for mapping in mappings:
                         json_field = mapping["json_field"]
                         db_table = mapping["db_table"]
@@ -94,8 +127,12 @@ def run():
 
                         if json_field and db_table and db_column:
                             try:
-                                # Preparar os dados para inserção
                                 data_to_insert = df[[json_field]].rename(columns={json_field: db_column})
+                                
+                                for relationship in relationships:
+                                    if relationship["table_origin"] == db_table and relationship["column_origin"] in data_to_insert.columns:
+                                        data_to_insert[relationship["column_dest"]] = data_to_insert[relationship["column_origin"]]
+                                
                                 insert_data(engine, db_table, data_to_insert)
                                 st.success(f"Dados de '{json_field}' inseridos com sucesso na coluna '{db_column}' da tabela '{db_table}'!")
                             except Exception as e:
