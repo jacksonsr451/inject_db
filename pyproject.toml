@@ -12,6 +12,7 @@ pandas = "^2.2.3"
 sqlalchemy = "^2.0.36"
 openpyxl = "^3.1.5"
 psycopg2-binary = "^2.9.10"
+odfpy = "^1.4.1"
 
 [build-system]
 requires = ["poetry-core"]
