@@ -100,18 +100,22 @@ class TestJSONToDatabase(unittest.TestCase):
 
     @patch('inject_db.modules.json_process.pd.read_json')
     def test_load_json(self, mock_read_json):
+        # Simulando o conteúdo JSON como uma string
         json_content = StringIO(
-            '{"col1":"value1","col2":"value2"}\n{"col1":"value3","col2":"value4"}'
+            '[{"col1":"value1","col2":"value2"},{"col1":"value3","col2":"value4"}]'
         )
+        
+        # Criando um DataFrame simulado que deve ser retornado pelo mock
         mock_df = pd.DataFrame(
             {'col1': ['value1', 'value3'], 'col2': ['value2', 'value4']}
         )
         mock_read_json.return_value = mock_df
 
+        # Chama a função load_json com o conteúdo JSON simulado
         result_df = load_json(json_content)
 
         # Verifica se o JSON foi lido corretamente
-        mock_read_json.assert_called_once_with(json_content, lines=True)
+        mock_read_json.assert_called_once_with(json_content)  # Removido `lines=True`
         pd.testing.assert_frame_equal(result_df, mock_df)
 
 
