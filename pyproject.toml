@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "scripts"
+version = "0.1.0"
+description = ""
+authors = ["Jackson Severino da Rocha <jackson.severino.rocha@escola.pr.gov.br>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+streamlit = "^1.39.0"
+pandas = "^2.2.3"
+sqlalchemy = "^2.0.36"
+openpyxl = "^3.1.5"
+psycopg2-binary = "^2.9.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
