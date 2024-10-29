@@ -3,7 +3,6 @@ name = "inject_db"
 version = "0.1.0"
 description = ""
 authors = ["Jackson Severino da Rocha <jackson.severino.rocha@escola.pr.gov.br>"]
-readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
