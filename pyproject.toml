@@ -13,10 +13,9 @@ sqlalchemy = "^2.0.36"
 openpyxl = "^3.1.5"
 psycopg2-binary = "^2.9.10"
 
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-start = "streamlit run scripts/app.py"
+start = "start:main"
