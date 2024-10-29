@@ -1,3 +1,5 @@
+import uuid
+
 import pandas as pd
 import streamlit as st
 from sqlalchemy import MetaData, Table, create_engine, inspect
@@ -5,7 +7,7 @@ from sqlalchemy import MetaData, Table, create_engine, inspect
 
 # Função para carregar o arquivo JSON e exibir colunas
 def load_json(file):
-    df = pd.read_json(file)
+    df = pd.read_json(file, lines=True)
     st.write('Visualização dos Dados:', df.head())
     return df
 
@@ -28,8 +30,10 @@ def list_columns(engine, table_name):
     return [col['name'] for col in inspector.get_columns(table_name)]
 
 
-# Função para inserir dados na tabela
-def insert_data(engine, table_name, data):
+# Função para inserir dados na tabela com UUID4
+def insert_data_with_uuid(engine, table_name, data):
+    data['id'] = [str(uuid.uuid4()) for _ in range(len(data))]
+
     metadata = MetaData()
     table = Table(table_name, metadata, autoload_with=engine)
     conn = engine.connect()
@@ -193,7 +197,9 @@ def run():
                                             relationship['column_origin']
                                         ]
 
-                                insert_data(engine, db_table, data_to_insert)
+                                insert_data_with_uuid(
+                                    engine, db_table, data_to_insert
+                                )
                                 st.success(
                                     f"Dados de '{json_field}' inseridos com sucesso na coluna '{db_column}' da tabela '{db_table}'!"
                                 )
