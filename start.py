@@ -1,3 +1,8 @@
 import subprocess
+import logging
 
-subprocess.run(["streamlit", "run", "scripts/app.py"])
+def main():
+    try:
+        subprocess.run(["streamlit", "run", "scripts/app.py", "--server.runOnSave=true"])
+    except KeyboardInterrupt:
+        logging.info("Processo interrompido pelo usuário.")
