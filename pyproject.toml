@@ -22,4 +22,5 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
+format = "scripts:run_formatters"
 start = "start:main"
