@@ -6,14 +6,14 @@ file_type = st.selectbox("Selecione o tipo de arquivo:", ["CSV", "XLSX", "JSON",
 
 # Execução com base na seleção
 if file_type == "CSV":
-    import scripts.modules.csv_process as csv_module
+    import modules.csv_process as csv_module
     csv_module.run()
 elif file_type == "XLSX":
-    import scripts.modules.xlsx_process as xlsx_module
+    import modules.xlsx_process as xlsx_module
     xlsx_module.run()
 elif file_type == "JSON":
-    import scripts.modules.json_process as json_module
+    import modules.json_process as json_module
     json_module.run()
 elif file_type == "ODS":
-    import scripts.modules.ods_process as ods_module
+    import modules.ods_process as ods_module
     ods_module.run()

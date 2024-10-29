@@ -17,3 +17,6 @@ psycopg2-binary = "^2.9.10"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start = "streamlit run scripts/app.py"
