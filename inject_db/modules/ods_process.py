@@ -2,31 +2,26 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy import MetaData, Table, create_engine, inspect
 
-
 # Função para carregar o arquivo ODS e exibir colunas
 def load_ods(file):
     df = pd.read_excel(file, engine='odf')
     st.write('Visualização dos Dados:', df.head())
     return df
 
-
 # Função para se conectar ao banco de dados
 def connect_to_database(connection_string):
     engine = create_engine(connection_string)
     return engine
-
 
 # Função para listar tabelas no banco de dados
 def list_tables(engine):
     inspector = inspect(engine)
     return inspector.get_table_names()
 
-
 # Função para listar colunas de uma tabela específica
 def list_columns(engine, table_name):
     inspector = inspect(engine)
     return [col['name'] for col in inspector.get_columns(table_name)]
-
 
 # Função para inserir dados na tabela
 def insert_data(engine, table_name, data):
@@ -35,9 +30,12 @@ def insert_data(engine, table_name, data):
     with engine.connect() as conn:
         conn.execute(table.insert(), data.to_dict(orient='records'))
 
-
 def run():
     st.header('Processamento de Arquivo ODS com Seleção Dinâmica')
+
+    # Inicializar session_state para mapeamentos
+    if 'mappings' not in st.session_state:
+        st.session_state.mappings = []
 
     # Interface do usuário
     st.title('Inserção de Dados em Banco via ODS com Seleção Dinâmica')
@@ -48,9 +46,12 @@ def run():
         "Insira a URL de conexão com o banco de dados (ex: 'postgresql://user:password@host:port/dbname')"
     )
 
-    if db_url:
-        engine = connect_to_database(db_url)
+    if db_url and 'engine' not in st.session_state:
+        st.session_state.engine = connect_to_database(db_url)
         st.success('Conectado ao banco de dados com sucesso!')
+
+    if 'engine' in st.session_state:
+        engine = st.session_state.engine
 
         if file:
             df = load_ods(file)
@@ -58,18 +59,16 @@ def run():
             # Listar tabelas do banco para seleção
             tables = list_tables(engine)
 
-            # Lista para armazenar os mapeamentos
-            mappings = []
             st.subheader('Mapeamento de Campos ODS para o Banco de Dados')
 
             # Botão para adicionar um novo mapeamento
             if st.button('Adicionar Mapeamento'):
-                mappings.append(
+                st.session_state.mappings.append(
                     {'ods_field': None, 'db_table': None, 'db_column': None}
                 )
 
             # Exibir todos os mapeamentos adicionados e permitir configuração
-            for i, mapping in enumerate(mappings):
+            for i, mapping in enumerate(st.session_state.mappings):
                 col1, col2, col3 = st.columns(3)
 
                 with col1:
@@ -88,7 +87,7 @@ def run():
                             columns,
                             key=f'column_{i}',
                         )
-                        mappings[i] = {
+                        st.session_state.mappings[i] = {
                             'ods_field': ods_field,
                             'db_table': table_db,
                             'db_column': db_column,
@@ -96,12 +95,12 @@ def run():
 
                 # Botão para remover este mapeamento
                 if st.button(f'Remover Mapeamento {i+1}', key=f'remove_{i}'):
-                    mappings.pop(i)
+                    st.session_state.mappings.pop(i)
 
             # Botão para inserir dados no banco conforme os mapeamentos definidos
             if st.button('Inserir Dados'):
-                if mappings:
-                    for mapping in mappings:
+                if st.session_state.mappings:
+                    for mapping in st.session_state.mappings:
                         ods_field = mapping['ods_field']
                         db_table = mapping['db_table']
                         db_column = mapping['db_column']

@@ -2,31 +2,26 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy import MetaData, Table, create_engine, inspect
 
-
 # Função para carregar o arquivo XLSX e exibir as colunas
 def load_excel(file):
     df = pd.read_excel(file)
     st.write('Visualização dos Dados:', df.head())
     return df
 
-
 # Função para se conectar ao banco de dados
 def connect_to_database(connection_string):
     engine = create_engine(connection_string)
     return engine
-
 
 # Função para listar tabelas no banco de dados
 def list_tables(engine):
     inspector = inspect(engine)
     return inspector.get_table_names()
 
-
 # Função para listar colunas de uma tabela específica
 def list_columns(engine, table_name):
     inspector = inspect(engine)
     return [col['name'] for col in inspector.get_columns(table_name)]
-
 
 # Função para inserir dados na tabela
 def insert_data(engine, table_name, data):
@@ -35,7 +30,6 @@ def insert_data(engine, table_name, data):
     with engine.connect() as conn:
         conn.execute(table.insert(), data.to_dict(orient='records'))
 
-
 def run():
     st.header('Processamento de Arquivo XLSX com Seleção Dinâmica')
 
@@ -43,18 +37,27 @@ def run():
     st.title('Inserção de Dados em Banco via Excel com Seleção Dinâmica')
     file = st.file_uploader('Faça upload do seu arquivo Excel', type=['xlsx'])
 
+    # Inicializa a lista de mapeamentos em `st.session_state`
+    if 'mappings' not in st.session_state:
+        st.session_state['mappings'] = []
+    
+    # Inicializa o estado de conexão
+    if 'engine' not in st.session_state:
+        st.session_state['engine'] = None
+
     # Etapa de conexão com o banco
     db_url = st.text_input(
         "Insira a URL de conexão com o banco de dados (ex: 'postgresql://user:password@host:port/dbname')"
     )
 
-    # Inicializa a lista de mapeamentos em `st.session_state`
-    if 'mappings' not in st.session_state:
-        st.session_state['mappings'] = []
-
+    # Conectar ao banco de dados
     if db_url:
-        engine = connect_to_database(db_url)
+        st.session_state['engine'] = connect_to_database(db_url)
         st.success('Conectado ao banco de dados com sucesso!')
+
+    # Verifica se a conexão foi estabelecida
+    if st.session_state['engine'] is not None:
+        engine = st.session_state['engine']
 
         if file:
             df = load_excel(file)
